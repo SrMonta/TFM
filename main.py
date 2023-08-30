@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, HTTPException
 from pypdf import PdfReader
 import datetime
+from utils import Utils
 
 app = FastAPI()
 
@@ -21,7 +22,8 @@ def health_check():
 # question_mode
 # 1 -> true/false questions
 # 2 -> single option
-# 3 -> multiple option
+# 3 -> multiple option (peor resultado)
+# 4 -> mixto (combinar todo) (no sale, se tiene que combinar llamadas)
 def check_question_mode(question_type: int):
     if question_type == 1:
         question_t = 'true/false'
@@ -52,30 +54,6 @@ def check_response_mode(response_type: int):
         raise HTTPException(status_code=400, detail=f'Value for response {response_type} not supported')
     return response_t
 
-@app.get('/params')
-def params_check(question_type: int = 1, include_answers: bool = True, response_type: int = 1):
-    q_mode = check_question_mode(question_type)
-    i_answers = check_include_answers(include_answers)
-    r_mode = check_response_mode(response_type)
-    return {
-        'question_mode': q_mode,
-        'include_answers': i_answers,
-        'response_mode': r_mode
-    }
-
-@app.post('/file')
-def file_check(file: UploadFile):
-    reader = PdfReader(file.file)
-    n_pages = len(reader.pages)
-    page = reader.pages[0]
-    text = page.extract_text()
-    clean_text = text.rstrip('\n').strip().replace('\\n', '')
-    print(clean_text)
-    return {
-        'n_pages': n_pages,
-        'text': clean_text
-    }
-
 @app.post('/file_info')
 def file_info_check(file: UploadFile):
     reader = PdfReader(file.file)
@@ -85,3 +63,31 @@ def file_info_check(file: UploadFile):
         'filesize': file.size,
         'file_type': file.content_type
     }
+
+# TODO: comprobar valores de los query parameters así como del tipo de fichero que nos llega
+# TODO: actualizar prompts para tener el numero de preguntas correctas
+# TODO: SI AL FINAL DAMOS OPCION DE MEZCLAR TIPOS DE PREGUNTAS HAY QUE VER COMO HACERLO
+# TODO: ACTUALIZAR RUTA DE /PROMPT A /QUESTIONS O SIMILAR
+
+@app.post('/prompt')
+def generate_prompt(file: UploadFile, question_type: int = 1, include_answers: bool = True, response_type: int = 1):
+    # Check file type
+    Utils.check_file_type(file)
+    # File read
+    file_content = Utils.get_file_content(file)
+    # Get base prompt
+    prompt = Utils.get_prompt(question_type, include_answers)
+    # Call to openai TODO:
+    questions = Utils.generate_questions(prompt, file_content)
+    # Generate response and return
+    return Utils.generate_response(questions, response_type)
+
+    # # Return
+    # return {
+    #     'file_name': file.filename,
+    #     'prompt': prompt,
+    #     'question_type': question_type,
+    #     'include_answers': include_answers,
+    #     'response_type': response_type
+    # }
+
