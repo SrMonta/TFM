@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 import datetime
 from utils import Utils
@@ -47,20 +48,6 @@ def file_info_check(file: UploadFile):
 # false -> borrar archivo
 # TODO:
 
-# # @app.post('/prompt')
-# @app.post('/questions')
-# def generate_prompt(file: UploadFile, question_type: int = 1, include_answers: bool = True, response_type: int = 1):
-#     # Check file type
-#     Utils.check_file_type(file)
-#     # File read
-#     file_content = Utils.get_file_content(file)
-#     # Get base prompt
-#     prompt = Utils.get_prompt(question_type, include_answers)
-#     # Call to openai
-#     questions = Utils.generate_questions(prompt, file_content)
-#     # Generate response and return
-#     return Utils.generate_response(questions, response_type, file.filename)
-
 @app.post('/questions')
 def generate_questions(file: UploadFile, question_type: int = 1, include_answers: bool = True, response_type: int = 1, keep_file: bool = False):
     # Check request
@@ -72,7 +59,12 @@ def generate_questions(file: UploadFile, question_type: int = 1, include_answers
     # Generate response
     return Utils.get_response(file.filename, questions, response_type, include_answers, keep_file)
 
-@app.get('/clean_file_paths')
-def clean_file_paths():
-    # TODO:
-    pass
+@app.get('/question_file/{filename}')
+def retrieve_generated_file(filename):
+    return Utils.get_generated_file(filename)
+
+@app.get('/clean_files')
+def clean_files():
+    if Utils.clean_files():
+        return JSONResponse(status_code=200, content={'message': 'Stored generated files deleted'})
+    
