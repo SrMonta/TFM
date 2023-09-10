@@ -1,6 +1,6 @@
 import prompts
 from fastapi import UploadFile, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pypdf import PdfReader
 from helpers import OpenAIHelper
 from config import N_PAGES_JOIN
@@ -106,16 +106,44 @@ class Utils:
             'questions': questions
         }
     
-    def update_file_paths(filename: str):
+    def update_file_paths(filename: str, file_path: str):
         with open("./file_paths.json", "r+") as jsonFile:
             data = json.load(jsonFile)
-            data[filename.split('.')[0]] = f'/question_files/{filename}'
+            data[filename.split('.')[0]] = file_path
             jsonFile.seek(0)  # rewind
             json.dump(data, jsonFile)
             jsonFile.truncate()
 
+    def clean_files():
+        try:
+            # Clean files
+            dir_path = './question_files/'
+            files = os.listdir(dir_path)
+            for file in files:
+                file_path = os.path.join(dir_path, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            # Clean files path file
+            with open('./file_paths.json', 'w') as jsonFile:
+                jsonFile.write('{}')
+                jsonFile.close()
+            return True
+        except Exception as e:
+            return False
+
     def delete_file(path: str):
         os.remove(path=path)
+
+    def get_generated_file(filename: str):
+        with open("./file_paths.json", "r+") as jsonFile:
+            content = json.load(jsonFile)
+            file_path = content.get(filename, None)
+            if not file_path:
+                jsonFile.close()
+                return JSONResponse(status_code=404, content={'message': f'File {filename} does not exist'})
+            else:
+                jsonFile.close()
+                return FileResponse(path=file_path, media_type='text/plain', filename=filename)
     
     def _get_txt_response(cls, filename: str, questions: list, include_answers: bool, keep_file: bool):
         name = filename.split('.')[0]+'_questions.txt'
@@ -130,7 +158,7 @@ class Utils:
             else:
                 f.write('\n')
         if keep_file:
-            cls.update_file_paths(filename)
+            cls.update_file_paths(filename, path)
             return FileResponse(path=path, media_type='text/plain', filename=name)
         else:
             return FileResponse(path=path, media_type='text/plain', filename=name, background=BackgroundTask(cls.delete_file, path))
