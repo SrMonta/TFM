@@ -1,2 +1,4 @@
 tfm
 __pycache__
+question_files/
+./file_paths.json
