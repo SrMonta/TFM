@@ -67,4 +67,6 @@ def retrieve_generated_file(filename):
 def clean_files():
     if Utils.clean_files():
         return JSONResponse(status_code=200, content={'message': 'Stored generated files deleted'})
+    else:
+        return JSONResponse(status_code=400, content={'message': 'There has been an error while deleting the files.'})
     
