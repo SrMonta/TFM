@@ -87,8 +87,8 @@ class Utils:
         answers_message = cls._get_answers_prompt()
         messages.append({'role': 'user', 'content': answers_message})
         # Format
-        format_message = cls._get_format_prompt()
-        messages.append({'role': 'user', 'content': format_message})
+        # format_message = cls._get_format_prompt()
+        # messages.append({'role': 'user', 'content': format_message})
         return messages
     
     @classmethod

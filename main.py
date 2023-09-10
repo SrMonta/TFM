@@ -47,8 +47,6 @@ def file_info_check(file: UploadFile):
 # false -> borrar archivo
 # TODO:
 
-# TODO: SI AL FINAL DAMOS OPCION DE MEZCLAR TIPOS DE PREGUNTAS HAY QUE VER COMO HACERLO
-
 # # @app.post('/prompt')
 # @app.post('/questions')
 # def generate_prompt(file: UploadFile, question_type: int = 1, include_answers: bool = True, response_type: int = 1):
@@ -63,7 +61,7 @@ def file_info_check(file: UploadFile):
 #     # Generate response and return
 #     return Utils.generate_response(questions, response_type, file.filename)
 
-@app.post('/questions2')
+@app.post('/questions')
 def generate_questions(file: UploadFile, question_type: int = 1, include_answers: bool = True, response_type: int = 1, keep_file: bool = False):
     # Check request
     Utils.check_request(file, question_type, include_answers, response_type, keep_file)
